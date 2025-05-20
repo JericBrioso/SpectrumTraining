@@ -1,0 +1,59 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+def calculate_fm_bandwidth(delta_f, f_m):
+    """
+    Calculate FM bandwidth using Carson's rule.
+    
+    Parameters:
+    delta_f (float): Peak frequency deviation (Hz)
+    f_m (float): Maximum modulating frequency (Hz)
+    
+    Returns:
+    float: Estimated FM bandwidth (Hz)
+    """
+    bandwidth = 2 * (delta_f + f_m)
+    return bandwidth
+
+def plot_fm_bandwidth(delta_f, f_m, bandwidth):
+    """
+    Plot the FM bandwidth visualization.
+    """
+    # Frequencies around the carrier (assume carrier at 0 Hz for visualization)
+    freqs = np.array([-bandwidth/2, -delta_f, 0, delta_f, bandwidth/2])
+    labels = ['-BW/2', '-Δf', 'Carrier', 'Δf', 'BW/2']
+    
+    plt.figure(figsize=(10, 2))
+    
+    # Plot vertical lines for each frequency component
+    for f, label in zip(freqs, labels):
+        plt.axvline(x=f, linestyle='--', color='gray')
+        plt.text(f, 0.1, label, ha='center', va='bottom')
+    
+    # Highlight bandwidth range
+    plt.fill_betweenx([0, 1], -bandwidth/2, bandwidth/2, color='lightblue', alpha=0.3, label=f'Bandwidth = {bandwidth} Hz')
+    
+    # Highlight frequency deviation range
+    plt.fill_betweenx([0, 1], -delta_f, delta_f, color='orange', alpha=0.5, label=f'Peak deviation = {delta_f} Hz')
+    
+    plt.xlim(-bandwidth, bandwidth)
+    plt.ylim(0, 1)
+    plt.xlabel('Frequency (Hz)')
+    plt.title('FM Signal Bandwidth Visualization')
+    plt.yticks([])
+    plt.legend()
+    plt.grid(True, axis='x')
+    plt.show()
+
+def main():
+    print("FM Bandwidth Calculation using Carson's Rule")
+    delta_f = float(input("Enter peak frequency deviation Δf (Hz): "))
+    f_m = float(input("Enter max modulating frequency f_m (Hz): "))
+    
+    bandwidth = calculate_fm_bandwidth(delta_f, f_m)
+    print(f"\nEstimated FM bandwidth: {bandwidth:.2f} Hz")
+    
+    plot_fm_bandwidth(delta_f, f_m, bandwidth)
+
+if __name__ == "__main__":
+    main()
