@@ -1,0 +1,45 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Parameters
+fs = 500000  # Sampling frequency (500 kHz for high resolution)
+t = np.linspace(0, 0.01, int(fs * 0.01))  # Time vector: 10 ms
+
+# Modulating signal (message)
+f_m = 1000  # 1 kHz message frequency
+A_m = 1
+m_t = A_m * np.sin(2 * np.pi * f_m * t)
+
+# Carrier signal
+f_c = 10000  # 10 kHz carrier frequency
+A_c = 1
+k_f = 75000  # Frequency deviation constant (Hz per unit amplitude)
+delta_f = k_f * A_m  # Peak frequency deviation
+
+# Frequency modulated signal
+s_t = A_c * np.cos(2 * np.pi * f_c * t + 2 * np.pi * k_f * np.cumsum(m_t) / fs)
+
+# Calculate bandwidth using Carson's Rule
+BW = 2 * (delta_f + f_m)
+
+print(f"Calculated Bandwidth (Carson's Rule): {BW / 1000:.2f} kHz")
+
+# Plotting
+plt.figure(figsize=(12, 6))
+
+plt.subplot(2, 1, 1)
+plt.plot(t[:1000], m_t[:1000])
+plt.title("Modulating Signal (1 kHz Sine Wave)")
+plt.xlabel("Time [s]")
+plt.ylabel("Amplitude")
+plt.grid()
+
+plt.subplot(2, 1, 2)
+plt.plot(t[:1000], s_t[:1000])
+plt.title("Frequency Modulated Signal")
+plt.xlabel("Time [s]")
+plt.ylabel("Amplitude")
+plt.grid()
+
+plt.tight_layout()
+plt.show()
