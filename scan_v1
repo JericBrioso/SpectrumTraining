@@ -1,0 +1,71 @@
+import adi
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# Sweep Parameters
+START_FREQ = 300e6   # 300 MHz
+STOP_FREQ = 800e6    # 800 MHz
+STEP_FREQ = 5e6      # 5 MHz step
+SWEEP_DELAY = 0.1    # seconds
+FFT_SIZE = 1024
+
+# SDR Parameters
+SAMPLE_RATE = 2e6
+BANDWIDTH = 20e6
+GAIN = 30
+
+# Frequency sweep array
+frequencies = np.arange(START_FREQ, STOP_FREQ + STEP_FREQ, STEP_FREQ)
+freq_index = [0]  # Mutable container for current frequency index
+
+# Initialize SDR
+sdr = adi.Pluto("ip:192.168.2.1")
+sdr.rx_sample_rate = int(SAMPLE_RATE)
+sdr.rx_rf_bandwidth = int(BANDWIDTH)
+sdr.rx_gain_control_mode = "manual"
+sdr.rx_hardwaregain = GAIN
+sdr.rx_lo = int(frequencies[0])
+
+# Frequency axis for FFT (in MHz)
+x_data = np.fft.fftshift(np.fft.fftfreq(FFT_SIZE, 1 / SAMPLE_RATE)) / 1e6
+
+# Set up plot
+fig, ax = plt.subplots()
+line, = ax.plot(x_data, np.zeros(FFT_SIZE))
+ax.set_title("Sweeping Spectrum Monitor (Pluto SDR)")
+ax.set_xlabel("Relative Frequency (MHz)")
+ax.set_ylabel("Power (dB)")
+ax.set_ylim(-100, 0)
+ax.set_xlim(x_data[0], x_data[-1])
+ax.grid(True)
+
+# Animation update function
+def update(frame):
+    # Update frequency
+    current_freq = frequencies[freq_index[0] % len(frequencies)]
+    sdr.rx_lo = int(current_freq)
+    freq_index[0] += 1
+
+    # Acquire and process samples
+    samples = sdr.rx()
+    if len(samples) < FFT_SIZE:
+        return line,
+
+    windowed = samples[:FFT_SIZE] * np.hanning(FFT_SIZE)
+    spectrum = 20 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(windowed))) + 1e-10)
+    spectrum[0] = np.nan
+    spectrum[-1] = np.nan
+
+    # Update plot
+    line.set_ydata(spectrum)
+    ax.set_title(f"Spectrum at {current_freq / 1e6:.1f} MHz")
+
+    return line,
+
+# Start animation
+ani = animation.FuncAnimation(fig, update, interval=SWEEP_DELAY * 1000)
+plt.show()
+
+# Cleanup on exit
+sdr.rx_destroy_buffer()
